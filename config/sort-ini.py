@@ -18,7 +18,7 @@ with open(filename, 'w', encoding='utf-8') as fd:
     # Copy of write() code that sorts output by section
     if oconfig._defaults:
         fd.write("[%s]\n" % DEFAULTSECT)
-        for (key, value) in oconfig._defaults.items():
+        for (key, value) in list(oconfig._defaults.items()):
             fd.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
         fd.write("\n")
     
@@ -26,7 +26,7 @@ with open(filename, 'w', encoding='utf-8') as fd:
     for section in sorted(oconfig._sections):
         if section == 'Planet':
             fd.write("[%s]\n" % section)
-        for (key, value) in oconfig._sections[section].items():
+        for (key, value) in list(oconfig._sections[section].items()):
             if key != "__name__":
                 if section == 'Planet':
                     fd.write("%s = %s\n" %

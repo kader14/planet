@@ -1,4 +1,4 @@
-FROM python:2.7.18
+FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -6,8 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 RUN mkdir /planet
 WORKDIR /planet
 
-COPY code /planet/code
+COPY requirements.txt /planet/requirements.txt
+RUN pip install --no-cache-dir -r /planet/requirements.txt
+
+COPY code   /planet/code
 COPY config /planet/config
 COPY static /planet/static
-
-
