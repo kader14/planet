@@ -1,7 +1,7 @@
 from xml.dom import minidom, Node
-from urlparse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse
 from xml.parsers.expat import ExpatError
-from htmlentitydefs import name2codepoint
+from html.entities import name2codepoint
 import re
 
 # select and apply an xml:base for this entry
@@ -44,7 +44,7 @@ class relativize:
       self.score[link] = 0
     winner = max(self.score.values())
     if not winner: return None
-    for key in self.score.keys():
+    for key in list(self.score.keys()):
       if self.score[key] == winner:
         if winner == len(key): return None
         return urlunparse(('http', key[0], '/'.join(key[1:]), '', '', '')) + '/'
@@ -80,10 +80,10 @@ def retype(parent):
              if chunks[i] in ['amp', 'lt', 'gt', 'apos', 'quot']:
                chunks[i] ='&' + chunks[i] +';'
              elif chunks[i] in name2codepoint:
-               chunks[i]=unichr(name2codepoint[chunks[i]])
+               chunks[i]=chr(name2codepoint[chunks[i]])
              else:
                chunks[i]='&' + chunks[i] + ';'
-          text = u"".join(chunks)
+          text = "".join(chunks)
 
           try:
             # see if the resulting text is a well-formed XML fragment

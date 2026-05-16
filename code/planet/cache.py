@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """Item cache.
 
@@ -8,6 +8,12 @@ goes away or is too short to hold enough items.
 
 This module provides the code to handle this cache transparently enough
 that the rest of the code can take the persistance for granted.
+
+Python 3 notes:
+    The underlying ``dbm.gnu`` store accepts only ``bytes`` for both keys and
+    values. To keep the public API of :class:`CachedInfo` working in terms of
+    ``str`` (as it did under Python 2 with implicit encode/decode), this module
+    encodes/decodes at the dbm boundary using UTF-8.
 """
 
 import os
@@ -19,6 +25,74 @@ re_url_scheme    = re.compile(r'^[^:]*://')
 re_slash         = re.compile(r'[?/]+')
 re_initial_cruft = re.compile(r'^[,.]*')
 re_final_cruft   = re.compile(r'[,.]*$')
+
+
+def _to_bytes(value):
+    """Encode a str to bytes for storage in dbm.gnu. Bytes pass through."""
+    if isinstance(value, bytes):
+        return value
+    if isinstance(value, str):
+        return value.encode("utf-8")
+    return str(value).encode("utf-8")
+
+
+def _to_str(value):
+    """Decode bytes from dbm.gnu back to a str. Strings pass through."""
+    if isinstance(value, bytes):
+        try:
+            return value.decode("utf-8")
+        except UnicodeDecodeError:
+            return value.decode("utf-8", "replace")
+    return value
+
+
+class _DbmStrWrapper:
+    """Thin wrapper around a dbm.gnu handle that exposes a str-keyed,
+    str-valued mapping. Encoding/decoding happens on every access.
+
+    This lets the rest of the codebase pretend the cache works with regular
+    Python strings, the way it used to under Python 2.
+    """
+
+    def __init__(self, db):
+        self._db = db
+
+    def __contains__(self, key):
+        return _to_bytes(key) in self._db
+
+    def __getitem__(self, key):
+        return _to_str(self._db[_to_bytes(key)])
+
+    def __setitem__(self, key, value):
+        self._db[_to_bytes(key)] = _to_bytes(value)
+
+    def __delitem__(self, key):
+        del self._db[_to_bytes(key)]
+
+    def keys(self):
+        return [_to_str(k) for k in self._db.keys()]
+
+    # ``has_key`` is referenced in legacy code paths.
+    def has_key(self, key):
+        return _to_bytes(key) in self._db
+
+    def sync(self):
+        if hasattr(self._db, "sync"):
+            self._db.sync()
+
+    def close(self):
+        self._db.close()
+
+
+def open_cache(filename_, mode="c", perm=0o666):
+    """Open a planet cache file as a str-keyed, str-valued dictionary.
+
+    Wraps ``dbm.gnu.open`` so the rest of the planet codebase can keep using
+    plain ``str`` objects for both keys and values, the way it did under
+    Python 2.
+    """
+    import dbm.gnu as gdbm
+    return _DbmStrWrapper(gdbm.open(filename_, mode, perm))
 
 
 class CachedInfo:
@@ -42,6 +116,16 @@ class CachedInfo:
         self._value = {}
         self._cached = {}
 
+        # Wrap a raw dbm.gnu handle so the rest of this class can deal in
+        # ``str``. Existing wrappers pass through unchanged.
+        if not isinstance(cache, _DbmStrWrapper) and hasattr(cache, "keys"):
+            try:
+                # If it quacks like dbm.gnu, wrap it.
+                import dbm.gnu  # noqa: F401
+                cache = _DbmStrWrapper(cache)
+            except ImportError:
+                pass
+
         self._cache = cache
         self._id = id_.replace(" ", "%20")
         self._root = root
@@ -61,14 +145,14 @@ class CachedInfo:
         else:
             keys_key = self._id
 
-        if self._cache.has_key(keys_key):
+        if keys_key in self._cache:
             keys = self._cache[keys_key].split(" ")
         else:
             return
 
         for key in keys:
             cache_key = self.cache_key(key)
-            if not self._cached.has_key(key) or self._cached[key]:
+            if key not in self._cached or self._cached[key]:
                 # Key either hasn't been loaded, or is one for the cache
                 self._value[key] = self._cache[cache_key]
                 self._type[key] = self._cache[cache_key + " type"]
@@ -79,10 +163,10 @@ class CachedInfo:
         self.cache_clear(sync=0)
 
         keys = []
-        for key in self.keys():
+        for key in list(self.keys()):
             cache_key = self.cache_key(key)
             if not self._cached[key]:
-                if self._cache.has_key(cache_key):
+                if cache_key in self._cache:
                     # Non-cached keys need to be cleared
                     del(self._cache[cache_key])
                     del(self._cache[cache_key + " type"])
@@ -108,7 +192,7 @@ class CachedInfo:
         else:
             keys_key = self._id
 
-        if self._cache.has_key(keys_key):
+        if keys_key in self._cache:
             keys = self._cache[keys_key].split(" ")
             del(self._cache[keys_key])
         else:
@@ -116,8 +200,11 @@ class CachedInfo:
 
         for key in keys:
             cache_key = self.cache_key(key)
-            del(self._cache[cache_key])
-            del(self._cache[cache_key + " type"])
+            try:
+                del(self._cache[cache_key])
+                del(self._cache[cache_key + " type"])
+            except KeyError:
+                pass
 
         if sync:
             self._cache.sync()
@@ -125,7 +212,7 @@ class CachedInfo:
     def has_key(self, key):
         """Check whether the key exists."""
         key = key.replace(" ", "_")
-        return self._value.has_key(key)
+        return key in self._value
 
     def key_type(self, key):
         """Return the key type."""
@@ -148,13 +235,20 @@ class CachedInfo:
         else:
             return func(key, value)
 
-        if value == None:
+        if value is None:
             return self.set_as_null(key, value)
-        else:
-            try:
-                return self.set_as_string(key, value)
-            except TypeError:
-                return self.set_as_date(key, value)
+
+        # Date-like values (tuple/struct_time as returned by feedparser /
+        # time.gmtime) must be stored as DATE; everything else is treated as
+        # a string.
+        import time as _time
+        if isinstance(value, (tuple, _time.struct_time)):
+            return self.set_as_date(key, value)
+
+        try:
+            return self.set_as_string(key, value)
+        except TypeError:
+            return self.set_as_date(key, value)
 
     def get(self, key):
         """Return the value of the given key.
@@ -183,9 +277,8 @@ class CachedInfo:
     def set_as_string(self, key, value, cached=1):
         """Set the key to the string value.
 
-        The value is converted to UTF-8 if it is a Unicode string, otherwise
-        it's assumed to have failed decoding (feedparser tries pretty hard)
-        so has all non-ASCII characters stripped.
+        Under Python 3 the in-memory representation is ``str`` (already
+        Unicode). Bytes coming in from feedparser are decoded as UTF-8.
         """
         value = utf8(value)
 
@@ -198,7 +291,7 @@ class CachedInfo:
         """Return the key as a string value."""
         key = key.replace(" ", "_")
         if not self.has_key(key):
-            raise KeyError, key
+            raise KeyError(key)
 
         return self._value[key]
 
@@ -207,7 +300,7 @@ class CachedInfo:
 
         The date should be a 9-item tuple as returned by time.gmtime().
         """
-        value = " ".join([ str(s) for s in value ])
+        value = " ".join([str(s) for s in value])
 
         key = key.replace(" ", "_")
         self._value[key] = value
@@ -218,10 +311,10 @@ class CachedInfo:
         """Return the key as a date value."""
         key = key.replace(" ", "_")
         if not self.has_key(key):
-            raise KeyError, key
+            raise KeyError(key)
 
         value = self._value[key]
-        return tuple([ int(i) for i in value.split(" ") ])
+        return tuple([int(i) for i in value.split(" ")])
 
     def set_as_null(self, key, value, cached=1):
         """Set the key to the null value.
@@ -237,7 +330,7 @@ class CachedInfo:
         """Return the key as the null value."""
         key = key.replace(" ", "_")
         if not self.has_key(key):
-            raise KeyError, key
+            raise KeyError(key)
 
         return None
 
@@ -245,7 +338,7 @@ class CachedInfo:
         """Delete the given key."""
         key = key.replace(" ", "_")
         if not self.has_key(key):
-            raise KeyError, key
+            raise KeyError(key)
 
         del(self._value[key])
         del(self._type[key])
@@ -253,11 +346,11 @@ class CachedInfo:
 
     def keys(self):
         """Return the list of cached keys."""
-        return self._value.keys()
+        return list(self._value.keys())
 
     def __iter__(self):
         """Iterate the cached keys."""
-        return iter(self._value.keys())
+        return iter(list(self._value.keys()))
 
     # Special methods
     __contains__ = has_key
@@ -273,10 +366,13 @@ class CachedInfo:
             self.set(key, value)
 
     def __getattr__(self, key):
+        # ``__contains__`` may be overridden by subclasses (e.g. Channel makes
+        # ``in`` mean "is this an item id?"), so check the cached-info store
+        # directly via ``has_key`` rather than via ``in self``.
         if self.has_key(key):
             return self.get(key)
         else:
-            raise AttributeError, key
+            raise AttributeError(key)
 
 
 def filename(directory, filename):
@@ -292,15 +388,22 @@ def filename(directory, filename):
 
     return os.path.join(directory, filename)
 
+
 def utf8(value):
-    """Return the value as a UTF-8 string."""
-    if type(value) == type(u''):
-        return value.encode("utf-8")
-    else:
-        try:
-            return unicode(value, "utf-8").encode("utf-8")
-        except UnicodeError:
+    """Return the value as a Unicode ``str``.
+
+    Under Python 2 this returned a UTF-8 encoded ``bytes`` object. Under
+    Python 3 the canonical text type is ``str`` (already Unicode), so we
+    decode any incoming ``bytes`` and return ``str``. The function name is
+    kept for compatibility with the rest of the codebase.
+    """
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bytes):
+        for enc in ("utf-8", "iso-8859-1"):
             try:
-                return unicode(value, "iso-8859-1").encode("utf-8")
-            except UnicodeError:
-                return unicode(value, "ascii", "replace").encode("utf-8")
+                return value.decode(enc)
+            except UnicodeDecodeError:
+                continue
+        return value.decode("ascii", "replace")
+    return str(value)

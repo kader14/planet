@@ -59,11 +59,15 @@ class _BaseHTMLProcessor(sgmllib.SGMLParser):
             return '<' + tag + '></' + tag + '>'
         
     def feed(self, data):
+        # In Python 3 sgmllib3k expects ``str``. Decode bytes if needed.
+        if isinstance(data, bytes):
+            try:
+                data = data.decode(self.encoding or "utf-8")
+            except (UnicodeDecodeError, LookupError):
+                data = data.decode("utf-8", "replace")
         data = self._r_barebang.sub(r'&lt;!\1', data)
         data = self._r_bareamp.sub("&amp;", data)
-        data = self._r_shorttag.sub(self._shorttag_replace, data) 
-        if self.encoding and type(data) == type(u''):
-            data = data.encode(self.encoding)
+        data = self._r_shorttag.sub(self._shorttag_replace, data)
         sgmllib.SGMLParser.feed(self, data)
 
     def normalize_attrs(self, attrs):
@@ -78,12 +82,15 @@ class _BaseHTMLProcessor(sgmllib.SGMLParser):
         # e.g. for <pre class='screen'>, tag='pre', attrs=[('class', 'screen')]
         if _debug: sys.stderr.write('_BaseHTMLProcessor, unknown_starttag, tag=%s\n' % tag)
         uattrs = []
-        # thanks to Kevin Marks for this breathtaking hack to deal with (valid) high-bit attribute values in UTF-8 feeds
+        # In Python 3 attrs are already ``str``; in Python 2 we used to decode
+        # bytes here. Normalise everything to ``str`` defensively.
         for key, value in attrs:
-            if type(value) != type(u''):
-                value = unicode(value, self.encoding)
-            uattrs.append((unicode(key, self.encoding), value))
-        strattrs = u''.join([u' %s="%s"' % (key, value) for key, value in uattrs]).encode(self.encoding)
+            if isinstance(value, bytes):
+                value = value.decode(self.encoding or "utf-8", "replace")
+            if isinstance(key, bytes):
+                key = key.decode(self.encoding or "utf-8", "replace")
+            uattrs.append((key, value))
+        strattrs = ''.join([' %s="%s"' % (key, value) for key, value in uattrs])
         if tag in self.elements_no_end_tag:
             self.pieces.append('<%(tag)s%(strattrs)s />' % locals())
         else:
@@ -254,12 +261,12 @@ def HTML(htmlSource, encoding='utf8'):
             except:
                 pass
         if _tidy:
-            utf8 = type(data) == type(u'')
+            utf8 = type(data) == type('')
             if utf8:
                 data = data.encode('utf-8')
             data = _tidy(data, output_xhtml=1, numeric_entities=1, wrap=0, char_encoding="utf8")
             if utf8:
-                data = unicode(data, 'utf-8')
+                data = str(data, 'utf-8')
             if data.count('<body'):
                 data = data.split('<body', 1)[1]
                 if data.count('>'):
@@ -309,7 +316,7 @@ def _ebcdic_to_ascii(s):
             )
         import string
         _ebcdic_to_ascii_map = string.maketrans( \
-            ''.join(map(chr, range(256))), ''.join(map(chr, emap)))
+            ''.join(map(chr, list(range(256)))), ''.join(map(chr, emap)))
     return s.translate(_ebcdic_to_ascii_map)
 
 def _startswithbom(text, bom):
@@ -323,7 +330,7 @@ def _startswithbom(text, bom):
     return True
 
 def _detectbom(text, bom_map=unicode_bom_map):
-    for bom, encoding in bom_map.iteritems():
+    for bom, encoding in bom_map.items():
         if _startswithbom(text, bom):
             return encoding
     return None
@@ -339,7 +346,7 @@ def characters(text, isXML=False, guess=None):
             if encoding == 'ebcdic':
                 return _ebcdic_to_ascii(text)
             try:
-                return unicode(text, encoding)
+                return str(text, encoding)
             except UnicodeDecodeError:
                 pass
             _triedEncodings.append(encoding)

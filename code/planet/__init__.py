@@ -14,15 +14,12 @@ __license__ = "Python"
 
 
 # Modules available without separate import
-import cache
-import feedparser
-import sanitize
-import htmltmpl
+from . import cache
+from . import sanitize
+from . import htmltmpl
 import sgmllib
-try:
-    import logging
-except:
-    import compat_logging as logging
+import feedparser
+import logging
 
 # Limit the effect of "from planet import *"
 __all__ = ("cache", "feedparser", "htmltmpl", "logging",
@@ -30,9 +27,8 @@ __all__ = ("cache", "feedparser", "htmltmpl", "logging",
 
 
 import os
-import md5
+import hashlib
 import time
-import dbhash
 import re
 
 try: 
@@ -45,7 +41,7 @@ except:
 VERSION = ("Planet/%s +http://www.planetplanet.org" % __version__)
 
 # Default User-Agent header to send when retreiving feeds
-USER_AGENT = VERSION + " " + feedparser.USER_AGENT
+USER_AGENT = VERSION + " " + getattr(feedparser, 'USER_AGENT', 'feedparser/6.0')
 
 # Default cache directory
 CACHE_DIRECTORY = "cache"
@@ -87,7 +83,7 @@ class stripHtml(sgmllib.SGMLParser):
 def template_info(item, date_format):
     """Produce a dictionary of template information."""
     info = {}
-    for key in item.keys():
+    for key in list(item.keys()):
         if item.key_type(key) == item.DATE:
             date = item.get_as_date(key)
             info[key] = time.strftime(date_format, date)
@@ -95,7 +91,7 @@ def template_info(item, date_format):
             info[key + "_822"] = time.strftime(TIMEFMT_822, date)
         else:
             info[key] = item[key]
-    if 'title' in item.keys():
+    if 'title' in list(item.keys()):
         info['title_plain'] = stripHtml(info['title']).result
 
     return info
@@ -198,7 +194,7 @@ class Planet:
                                    channels=channel_list):
             item_info = template_info(newsitem, date_format)
             chan_info = channels[newsitem._channel]
-            for k, v in chan_info.items():
+            for k, v in list(chan_info.items()):
                 item_info["channel_" + k] = v
     
             # Check for the start of a new day
@@ -208,7 +204,7 @@ class Planet:
                                                       newsitem.date)
     
             # Check for the start of a new channel
-            if item_info.has_key("new_date") \
+            if "new_date" in item_info \
                    or prev_channel != newsitem._channel:
                 prev_channel = newsitem._channel
                 item_info["new_channel"] = newsitem._channel.url
@@ -326,7 +322,7 @@ class Planet:
         """Return the list of channels."""
         channels = []
         for channel in self._channels:
-            if hidden or not channel.has_key("hidden"):
+            if hidden or "hidden" not in channel:
                 channels.append((channel.name, channel))
 
         if sorted:
@@ -381,8 +377,8 @@ class Planet:
         seen_guids = {}
         if not channels: channels=self.channels(hidden=hidden, sorted=0)
         for channel in channels:
-            for item in channel._items.values():
-                if hidden or not item.has_key("hidden"):
+            for item in list(channel._items.values()):
+                if hidden or "hidden" not in item:
 
                     channel_filter_re = None
                     if channel.filter:
@@ -395,7 +391,7 @@ class Planet:
                     if (planet_filter_re or planet_exclude_re \
                         or channel_filter_re or channel_exclude_re):
                         title = ""
-                        if item.has_key("title"):
+                        if "title" in item:
                             title = item.title
                         content = item.get_content("content")
 
@@ -419,7 +415,7 @@ class Planet:
                             or channel_exclude_re.search(content)):
                             continue
 
-                    if not seen_guids.has_key(item.id):
+                    if item.id not in seen_guids:
                         seen_guids[item.id] = 1;
                         items.append((time.mktime(item.date), item.order, item))
 
@@ -504,7 +500,7 @@ class Channel(cache.CachedInfo):
         if not os.path.isdir(planet.cache_directory):
             os.makedirs(planet.cache_directory)
         cache_filename = cache.filename(planet.cache_directory, url)
-        cache_file = dbhash.open(cache_filename, "c", 0666)
+        cache_file = cache.open_cache(cache_filename, "c", 0o666)
 
         cache.CachedInfo.__init__(self, cache_file, url, root=1)
 
@@ -533,7 +529,7 @@ class Channel(cache.CachedInfo):
 
     def has_item(self, id_):
         """Check whether the item exists in the channel."""
-        return self._items.has_key(id_)
+        return id_ in self._items
 
     def get_item(self, id_):
         """Return the item from the channel."""
@@ -545,8 +541,8 @@ class Channel(cache.CachedInfo):
     def items(self, hidden=0, sorted=0):
         """Return the item list."""
         items = []
-        for item in self._items.values():
-            if hidden or not item.has_key("hidden"):
+        for item in list(self._items.values()):
+            if hidden or "hidden" not in item:
                 items.append((time.mktime(item.date), item.order, item))
 
         if sorted:
@@ -561,7 +557,7 @@ class Channel(cache.CachedInfo):
 
     def cache_read_entries(self):
         """Read entry information from the cache."""
-        keys = self._cache.keys()
+        keys = list(self._cache.keys())
         for key in keys:
             if key.find(" ") != -1: continue
             if self.has_key(key): continue
@@ -574,7 +570,7 @@ class Channel(cache.CachedInfo):
 
     def cache_write(self, sync=1):
         """Write channel and item information to the cache."""
-        for item in self._items.values():
+        for item in list(self._items.values()):
             item.cache_write(sync=0)
         for item in self._expired:
             item.cache_clear(sync=0)
@@ -607,9 +603,9 @@ class Channel(cache.CachedInfo):
         info = feedparser.parse(self.url,
                                 etag=self.url_etag, modified=self.url_modified,
                                 agent=self._planet.user_agent)
-        if info.has_key("status"):
+        if "status" in info:
            self.url_status = str(info.status)
-        elif info.has_key("entries") and len(info.entries)>0:
+        elif "entries" in info and len(info.entries)>0:
            self.url_status = str(200)
         elif info.bozo and info.bozo_exception.__class__.__name__=='Timeout':
            self.url_status = str(408)
@@ -617,7 +613,7 @@ class Channel(cache.CachedInfo):
            self.url_status = str(500)
 
         if self.url_status == '301' and \
-           (info.has_key("entries") and len(info.entries)>0):
+           ("entries" in info and len(info.entries)>0):
             log.warning("Feed has moved from <%s> to <%s>", self.url, info.url)
             try:
                 os.link(cache.filename(self._planet.cache_directory, self.url),
@@ -642,13 +638,18 @@ class Channel(cache.CachedInfo):
         else:
             log.info("Updating feed %s", self.feed_information())
 
-        self.url_etag = info.has_key("etag") and info.etag or None
-        self.url_modified = info.has_key("modified") and info.modified or None
+        self.url_etag = "etag" in info and info.etag or None
+        self.url_modified = "modified" in info and info.modified or None
         if self.url_etag is not None:
             log.debug("E-Tag: %s", self.url_etag)
         if self.url_modified is not None:
-            log.debug("Last Modified: %s",
-                      time.strftime(TIMEFMT_ISO, self.url_modified))
+            # feedparser may return either a struct_time tuple or a str (HTTP
+            # date) here depending on version. Be defensive about both.
+            if isinstance(self.url_modified, (tuple, time.struct_time)):
+                log.debug("Last Modified: %s",
+                          time.strftime(TIMEFMT_ISO, self.url_modified))
+            else:
+                log.debug("Last Modified: %s", self.url_modified)
 
         self.update_info(info.feed)
         self.update_entries(info.entries)
@@ -661,19 +662,19 @@ class Channel(cache.CachedInfo):
         the cached information about the feed.  These are the various
         potentially interesting properties that you might care about.
         """
-        for key in feed.keys():
+        for key in list(feed.keys()):
             if key in self.IGNORE_KEYS or key + "_parsed" in self.IGNORE_KEYS:
                 # Ignored fields
                 pass
-            elif feed.has_key(key + "_parsed"):
+            elif key + "_parsed" in feed:
                 # Ignore unparsed date fields
                 pass
             elif key.endswith("_detail"):
                 # retain name and  email sub-fields
-                if feed[key].has_key('name') and feed[key].name:
+                if 'name' in feed[key] and feed[key].name:
                     self.set_as_string(key.replace("_detail","_name"), \
                         feed[key].name)
-                if feed[key].has_key('email') and feed[key].email:
+                if 'email' in feed[key] and feed[key].email:
                     self.set_as_string(key.replace("_detail","_email"), \
                         feed[key].email)
             elif key == "items":
@@ -685,21 +686,21 @@ class Channel(cache.CachedInfo):
                     self.set_as_date(key[:-len("_parsed")], feed[key])
             elif key == "image":
                 # Image field: save all the information
-                if feed[key].has_key("url"):
+                if "url" in feed[key]:
                     self.set_as_string(key + "_url", feed[key].url)
-                if feed[key].has_key("link"):
+                if "link" in feed[key]:
                     self.set_as_string(key + "_link", feed[key].link)
-                if feed[key].has_key("title"):
+                if "title" in feed[key]:
                     self.set_as_string(key + "_title", feed[key].title)
-                if feed[key].has_key("width"):
+                if "width" in feed[key]:
                     self.set_as_string(key + "_width", str(feed[key].width))
-                if feed[key].has_key("height"):
+                if "height" in feed[key]:
                     self.set_as_string(key + "_height", str(feed[key].height))
-            elif isinstance(feed[key], (str, unicode)):
+            elif isinstance(feed[key], str):
                 # String fields
                 try:
                     detail = key + '_detail'
-                    if feed.has_key(detail) and feed[detail].has_key('type'):
+                    if detail in feed and 'type' in feed[detail]:
                         if feed[detail].type == 'text/html':
                             feed[key] = sanitize.HTML(feed[key])
                         elif feed[detail].type == 'text/plain':
@@ -736,16 +737,16 @@ class Channel(cache.CachedInfo):
         feed_items = []
         for entry in entries:
             # Try really hard to find some kind of unique identifier
-            if entry.has_key("id"):
+            if "id" in entry:
                 entry_id = cache.utf8(entry.id)
-            elif entry.has_key("link"):
+            elif "link" in entry:
                 entry_id = cache.utf8(entry.link)
-            elif entry.has_key("title"):
+            elif "title" in entry:
                 entry_id = (self.url + "/"
-                            + md5.new(cache.utf8(entry.title)).hexdigest())
-            elif entry.has_key("summary"):
+                            + hashlib.md5(cache.utf8(entry.title).encode("utf-8")).hexdigest())
+            elif "summary" in entry:
                 entry_id = (self.url + "/"
-                            + md5.new(cache.utf8(entry.summary)).hexdigest())
+                            + hashlib.md5(cache.utf8(entry.summary).encode("utf-8")).hexdigest())
             else:
                 log.error("Unable to find or generate id, entry ignored")
                 continue
@@ -838,7 +839,7 @@ class NewsItem(cache.CachedInfo):
 
         self._channel = channel
         self.id = id_
-        self.id_hash = md5.new(id_).hexdigest()
+        self.id_hash = hashlib.md5(cache.utf8(id_).encode("utf-8")).hexdigest()
         self.date = None
         self.order = None
         self.content = None
@@ -846,23 +847,23 @@ class NewsItem(cache.CachedInfo):
 
     def update(self, entry):
         """Update the item from the feedparser entry given."""
-        for key in entry.keys():
+        for key in list(entry.keys()):
             if key in self.IGNORE_KEYS or key + "_parsed" in self.IGNORE_KEYS:
                 # Ignored fields
                 pass
-            elif entry.has_key(key + "_parsed"):
+            elif key + "_parsed" in entry:
                 # Ignore unparsed date fields
                 pass
             elif key.endswith("_detail"):
                 # retain name, email, and language sub-fields
-                if entry[key].has_key('name') and entry[key].name:
+                if 'name' in entry[key] and entry[key].name:
                     self.set_as_string(key.replace("_detail","_name"), \
                         entry[key].name)
-                if entry[key].has_key('email') and entry[key].email:
+                if 'email' in entry[key] and entry[key].email:
                     self.set_as_string(key.replace("_detail","_email"), \
                         entry[key].email)
-                if entry[key].has_key('language') and entry[key].language and \
-                   (not self._channel.has_key('language') or \
+                if 'language' in entry[key] and entry[key].language and \
+                   ('language' not in self._channel or \
                    entry[key].language != self._channel.language):
                     self.set_as_string(key.replace("_detail","_language"), \
                         entry[key].language)
@@ -872,9 +873,9 @@ class NewsItem(cache.CachedInfo):
                     self.set_as_date(key[:-len("_parsed")], entry[key])
             elif key == "source":
                 # Source field: save both url and value
-                if entry[key].has_key("value"):
+                if "value" in entry[key]:
                     self.set_as_string(key + "_name", entry[key].value)
-                if entry[key].has_key("url"):
+                if "url" in entry[key]:
                     self.set_as_string(key + "_link", entry[key].url)
             elif key == "content":
                 # Content field: concatenate the values
@@ -884,18 +885,18 @@ class NewsItem(cache.CachedInfo):
                         item.value = sanitize.HTML(item.value)
                     elif item.type == 'text/plain':
                         item.value = escape(item.value)
-                    if item.has_key('language') and item.language and \
-                       (not self._channel.has_key('language') or
+                    if 'language' in item and item.language and \
+                       ('language' not in self._channel or
                        item.language != self._channel.language) :
                         self.set_as_string(key + "_language", item.language)
                     value += cache.utf8(item.value)
                 self.set_as_string(key, value)
-            elif isinstance(entry[key], (str, unicode)):
+            elif isinstance(entry[key], str):
                 # String fields
                 try:
                     detail = key + '_detail'
-                    if entry.has_key(detail):
-                        if entry[detail].has_key('type'):
+                    if detail in entry:
+                        if 'type' in entry[detail]:
                             if entry[detail].type == 'text/html':
                                 entry[key] = sanitize.HTML(entry[key])
                             elif entry[detail].type == 'text/plain':
