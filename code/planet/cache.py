@@ -245,10 +245,7 @@ class CachedInfo:
         if isinstance(value, (tuple, _time.struct_time)):
             return self.set_as_date(key, value)
 
-        try:
-            return self.set_as_string(key, value)
-        except TypeError:
-            return self.set_as_date(key, value)
+        return self.set_as_string(key, value)
 
     def get(self, key):
         """Return the value of the given key.

@@ -322,7 +322,7 @@ class Planet:
         """Return the list of channels."""
         channels = []
         for channel in self._channels:
-            if hidden or "hidden" not in channel:
+            if hidden or not channel.has_key("hidden"):
                 channels.append((channel.name, channel))
 
         if sorted:
@@ -685,17 +685,21 @@ class Channel(cache.CachedInfo):
                 if feed[key] is not None:
                     self.set_as_date(key[:-len("_parsed")], feed[key])
             elif key == "image":
-                # Image field: save all the information
-                if "url" in feed[key]:
-                    self.set_as_string(key + "_url", feed[key].url)
-                if "link" in feed[key]:
-                    self.set_as_string(key + "_link", feed[key].link)
-                if "title" in feed[key]:
-                    self.set_as_string(key + "_title", feed[key].title)
-                if "width" in feed[key]:
-                    self.set_as_string(key + "_width", str(feed[key].width))
-                if "height" in feed[key]:
-                    self.set_as_string(key + "_height", str(feed[key].height))
+                # Image field: save all the information.
+                # feedparser >=6 exposes ``href`` instead of ``url`` for the
+                # image URL; keep both as fallbacks for older feeds/parsers.
+                src = feed[key]
+                image_url = src.get("href") or src.get("url")
+                if image_url:
+                    self.set_as_string(key + "_url", image_url)
+                if "link" in src:
+                    self.set_as_string(key + "_link", src.link)
+                if "title" in src:
+                    self.set_as_string(key + "_title", src.title)
+                if "width" in src:
+                    self.set_as_string(key + "_width", str(src.width))
+                if "height" in src:
+                    self.set_as_string(key + "_height", str(src.height))
             elif isinstance(feed[key], str):
                 # String fields
                 try:
@@ -863,7 +867,7 @@ class NewsItem(cache.CachedInfo):
                     self.set_as_string(key.replace("_detail","_email"), \
                         entry[key].email)
                 if 'language' in entry[key] and entry[key].language and \
-                   ('language' not in self._channel or \
+                   (not self._channel.has_key('language') or \
                    entry[key].language != self._channel.language):
                     self.set_as_string(key.replace("_detail","_language"), \
                         entry[key].language)
@@ -872,11 +876,17 @@ class NewsItem(cache.CachedInfo):
                 if entry[key] is not None:
                     self.set_as_date(key[:-len("_parsed")], entry[key])
             elif key == "source":
-                # Source field: save both url and value
-                if "value" in entry[key]:
-                    self.set_as_string(key + "_name", entry[key].value)
-                if "url" in entry[key]:
-                    self.set_as_string(key + "_link", entry[key].url)
+                # Source field: save both url and value.
+                # feedparser >=6 renamed the text payload from ``value`` to
+                # ``title`` and the URL attribute from ``url`` to ``href``;
+                # accept both shapes so we keep working on older feeds too.
+                src = entry[key]
+                source_name = src.get("title") or src.get("value")
+                if source_name:
+                    self.set_as_string(key + "_name", source_name)
+                source_link = src.get("href") or src.get("url")
+                if source_link:
+                    self.set_as_string(key + "_link", source_link)
             elif key == "content":
                 # Content field: concatenate the values
                 value = ""
@@ -886,7 +896,7 @@ class NewsItem(cache.CachedInfo):
                     elif item.type == 'text/plain':
                         item.value = escape(item.value)
                     if 'language' in item and item.language and \
-                       ('language' not in self._channel or
+                       (not self._channel.has_key('language') or
                        item.language != self._channel.language) :
                         self.set_as_string(key + "_language", item.language)
                     value += cache.utf8(item.value)
