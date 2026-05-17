@@ -30,11 +30,26 @@ log() {
 
 # --- Activate the virtualenv -------------------------------------------------
 # cPanel's "Setup Python App" places the venv under ~/virtualenv/<app>/<py>/.
-# Override PLANET_VENV in the cron command if yours lives elsewhere.
-PLANET_VENV="${PLANET_VENV:-${HOME}/virtualenv/planet/3.11}"
+# If PLANET_VENV is not provided we auto-detect the newest 3.x venv that has
+# an activate script under ~/virtualenv/planet/.
+if [[ -z "${PLANET_VENV:-}" ]]; then
+    BASE="${HOME}/virtualenv/planet"
+    if [[ -d "${BASE}" ]]; then
+        # Sort -V picks the highest version (e.g. 3.13 before 3.11).
+        for candidate in $(ls -1 "${BASE}" 2>/dev/null | sort -Vr); do
+            if [[ -f "${BASE}/${candidate}/bin/activate" ]]; then
+                PLANET_VENV="${BASE}/${candidate}"
+                break
+            fi
+        done
+    fi
+    PLANET_VENV="${PLANET_VENV:-${HOME}/virtualenv/planet/3.11}"
+fi
+
 if [[ -f "${PLANET_VENV}/bin/activate" ]]; then
     # shellcheck disable=SC1091
     source "${PLANET_VENV}/bin/activate"
+    log "Using virtualenv ${PLANET_VENV}"
 else
     log "WARN: virtualenv not found at ${PLANET_VENV}; falling back to system python3"
 fi
