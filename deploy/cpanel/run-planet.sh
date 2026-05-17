@@ -39,6 +39,11 @@ else
     log "WARN: virtualenv not found at ${PLANET_VENV}; falling back to system python3"
 fi
 
+# Many shared/cPanel hosts mount $HOME on a filesystem (NFS, CageFS, …) that
+# does not honour flock(); without this gdbm fails with EAGAIN. The Python
+# cache layer respects the variable and skips locking when it is set.
+export PLANET_GDBM_NOLOCK="${PLANET_GDBM_NOLOCK:-1}"
+
 # --- Read output_dir straight from config.ini --------------------------------
 CONFIG_FILE="${PLANET_ROOT}/config/config.ini"
 OUTPUT_DIR="$(awk -F '= *' '/^output_dir/ {print $2; exit}' "${CONFIG_FILE}" | tr -d '[:space:]')"
