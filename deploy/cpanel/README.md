@@ -1,5 +1,23 @@
 # Deploying Planet Python on cPanel
 
+> **Quick start (SSH):** if you can run shell commands on your cPanel host,
+> use the one-shot installer:
+>
+> ```bash
+> git clone https://github.com/kader14/planet.git ~/planet
+> bash ~/planet/deploy/cpanel/setup.sh
+> ```
+>
+> It creates the virtualenv, patches `config.ini`, runs the first build and
+> prints the exact cron line to paste into cPanel.
+>
+> **No SSH?** Follow the visual, click-by-click walkthrough in
+> [`VISUAL_GUIDE.md`](VISUAL_GUIDE.md) (Arabic + screenshots-style diagrams).
+>
+> The rest of this document is the manual reference.
+
+---
+
 Planet Python is a **static-site generator**, not a long-running web app: it
 reads `config/config.ini`, downloads the configured RSS/Atom feeds, and writes
 the rendered `index.html`, `rss20.xml`, `atom.xml`, … into `output_dir`. So
