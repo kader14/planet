@@ -421,10 +421,19 @@ class Planet:
 
         # Sort the list
         if sorted:
-            items.sort()
+            # Sort by (timestamp, order) only — under Python 3 tuple
+            # comparison falls through to the third element (NewsItem) when
+            # the first two tie, and NewsItem has no defined ordering.
+            # ``order`` is stored as a string in the cache so coerce to int
+            # for a numerically-correct comparison.
+            def _sort_key(triple):
+                ts, order, _ = triple
+                try:
+                    return (ts, int(order))
+                except (TypeError, ValueError):
+                    return (ts, 0)
+            items.sort(key=_sort_key)
             items.reverse()
-
-        # Apply max_items filter
         if len(items) and max_items:
             items = items[:max_items]
 
@@ -546,7 +555,16 @@ class Channel(cache.CachedInfo):
                 items.append((time.mktime(item.date), item.order, item))
 
         if sorted:
-            items.sort()
+            # See note in Planet.items about the explicit key=. The third
+            # tuple element is a NewsItem which Python 3 cannot compare,
+            # and ``order`` is stored as a string.
+            def _sort_key(triple):
+                ts, order, _ = triple
+                try:
+                    return (ts, int(order))
+                except (TypeError, ValueError):
+                    return (ts, 0)
+            items.sort(key=_sort_key)
             items.reverse()
 
         return [ i[-1] for i in items ]
