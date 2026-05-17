@@ -90,9 +90,46 @@ def open_cache(filename_, mode="c", perm=0o666):
     Wraps ``dbm.gnu.open`` so the rest of the planet codebase can keep using
     plain ``str`` objects for both keys and values, the way it did under
     Python 2.
+
+    On filesystems that do not support ``flock()`` (NFS, some CloudLinux/
+    CageFS setups, …) ``gdbm`` raises ``[Errno 11] Resource temporarily
+    unavailable`` on every open. We retry with the ``u`` (unlocked) modifier
+    which is appropriate for our use case because the planet aggregator runs
+    sequentially from cron, never concurrently against the same cache.
+
+    Honouring the ``PLANET_GDBM_NOLOCK`` environment variable lets the
+    caller skip the locked attempt entirely on hosts where it is known to
+    fail. As an additional fallback for hosts that ship Python without the
+    ``dbm.gnu`` extension we transparently fall back to ``dbm.dumb`` (pure
+    Python, slower but always available).
     """
-    import dbm.gnu as gdbm
-    return _DbmStrWrapper(gdbm.open(filename_, mode, perm))
+    nolock = os.environ.get("PLANET_GDBM_NOLOCK", "").lower() in ("1", "true", "yes")
+
+    try:
+        import dbm.gnu as gdbm
+    except ImportError:
+        # No gdbm at all — use the pure-Python fallback.
+        import dbm.dumb as ddbm
+        return _DbmStrWrapper(ddbm.open(filename_, mode))
+
+    if not nolock:
+        try:
+            return _DbmStrWrapper(gdbm.open(filename_, mode, perm))
+        except gdbm.error as exc:
+            # errno 11 (EAGAIN) means flock() is not honoured on this fs.
+            if getattr(exc, "errno", None) != 11 and "Resource temporarily" not in str(exc):
+                raise
+            # Fall through to the unlocked attempt.
+
+    # ``u`` modifier => open without taking a flock. Safe here because the
+    # planet aggregator is run sequentially from a single cron job.
+    try:
+        return _DbmStrWrapper(gdbm.open(filename_, mode + "u", perm))
+    except gdbm.error:
+        # Last resort: pure-Python dbm.dumb. It writes three sidecar files
+        # (.dat / .dir / .bak) but works on any filesystem.
+        import dbm.dumb as ddbm
+        return _DbmStrWrapper(ddbm.open(filename_, mode))
 
 
 class CachedInfo:
