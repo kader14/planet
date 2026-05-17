@@ -1,0 +1,54 @@
+; -----------------------------------------------------------------------------
+; Planet Python — cPanel deployment config
+; -----------------------------------------------------------------------------
+; Copy this file to ~/planet/config/config.ini on your cPanel account, then
+; replace YOUR_CPANEL_USER below with the actual account name (`whoami` on the
+; SSH shell, or "Username" on the cPanel home screen).
+;
+; The full feed list lives in the upstream config/config.ini; once you have
+; the values in [Planet] correct you can simply append the feed sections from
+; that file to this one (or replace this whole [Planet] block inside the
+; original file — the feed sections do not need to change).
+; -----------------------------------------------------------------------------
+
+[Planet]
+name              = Planet Python
+link              = https://planetpython.org/
+owner_name        = Python Software Foundation
+owner_email       = planet@python.org
+encoding          = utf-8
+log_level         = INFO
+
+; How many feed items to keep / show.
+items_per_page    = 25
+days_per_page     = 10
+new_feed_items    = 1
+activity_threshold = 180
+
+; Date formatting used by the templates.
+date_format       = %B %d, %Y %I:%M %p %Z
+new_date_format   = %B %d, %Y
+
+; -----------------------------------------------------------------------------
+; cPanel-specific paths.
+;
+; output_dir      -> where the generated HTML/RSS/Atom files are written.
+;                    Point this at the docroot of the (sub)domain that should
+;                    serve the site. For the main domain this is public_html;
+;                    for an addon/sub-domain use the docroot configured for it.
+;
+; cache_directory -> persistent feedparser cache; keep it OUTSIDE public_html
+;                    so it is not exposed over HTTP.
+; -----------------------------------------------------------------------------
+output_dir        = /home/YOUR_CPANEL_USER/public_html
+cache_directory   = /home/YOUR_CPANEL_USER/planet/cache
+
+; Templates are resolved relative to the working directory used when planet.py
+; runs (the cron job below sets it to ~/planet). Leave this list as-is.
+template_files    = config/index.html.tmpl config/rss20.xml.tmpl config/rss10.xml.tmpl config/opml.xml.tmpl config/foafroll.xml.tmpl config/summary.html.tmpl config/titles_only.html.tmpl
+
+; -----------------------------------------------------------------------------
+; Append the full feed list (every [http...] section) from the upstream
+; config/config.ini below this line. Nothing about those sections needs to
+; change for cPanel.
+; -----------------------------------------------------------------------------
