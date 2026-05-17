@@ -330,6 +330,7 @@ https://yourdomain.com/
 
 | المشكلة | الحل |
 |---|---|
+| ❌ `ensurepip` returned non-zero exit status 1 | راجع القسم أدناه — `ensurepip` معطّل في Python 3.9 |
 | ❌ `Cron Jobs` غير موجود في cPanel | اطلب من شركة الاستضافة تفعيلها |
 | ❌ `Setup Python App` غير موجود | الاستضافة لا تدعم Python — تحتاج CloudLinux/LiteSpeed |
 | ❌ السجل يقول `ModuleNotFoundError` | الـ venv غير مفعّل — تأكد من مسار `PLANET_VENV` |
@@ -337,6 +338,40 @@ https://yourdomain.com/
 | ❌ `Permission denied` | استبدلت `USERNAME` خطأ، أو `output_dir` يشير لمجلد ليس ملكك |
 | ❌ صفحة بيضاء على الموقع | لم يتم تشغيل cron بعد — انتظر ٣٠ دقيقة أو شغّله يدوياً |
 | ❌ خلاصات RSS لا تتحدّث | تحقق من `cache_directory` (يجب أن يكون قابلاً للكتابة) |
+
+### مشكلة `ensurepip` فشل في إنشاء venv
+
+الخطأ الكامل عادة:
+
+```
+Error: Command '['/home/USER/virtualenv/planet/3.9/bin/python3.9',
+'-Im', 'ensurepip', '--upgrade', '--default-pip']' returned non-zero exit status 1.
+```
+
+**السبب:** بعض شركات الاستضافة (خاصة CloudLinux) تُعطّل وحدة `ensurepip`
+في Python 3.9 لتقليل المساحة. النسخة المُحدّثة من `setup.sh` تتعامل مع هذا
+تلقائياً عبر ٣ استراتيجيات احتياطية:
+
+1. `python -m venv` (الأصلية).
+2. `python -m venv --without-pip` ثم تنزيل `get-pip.py` يدوياً.
+3. تثبيت حزمة `virtualenv` كحل أخير.
+
+**لو ما زال يفشل**، استخدم Python 3.10 أو أحدث:
+
+```bash
+# اعرض إصدارات Python المتاحة على الخادم
+ls /opt/alt/ | grep python
+
+# مثال: استخدم 3.11 صراحةً
+bash ~/planet/deploy/cpanel/setup.sh --python /opt/alt/python311/bin/python3.11
+```
+
+**أو استخدم Setup Python App في cPanel** لإنشاء الـ venv (يتجاوز قيود
+`ensurepip`)، ثم أعد تشغيل السكربت بـ `--skip-run` ليعيد استخدام الـ venv:
+
+```bash
+bash ~/planet/deploy/cpanel/setup.sh --skip-run
+```
 
 ---
 

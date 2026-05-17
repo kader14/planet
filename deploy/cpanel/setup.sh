@@ -66,9 +66,20 @@ if [[ ! -f "${PLANET_ROOT}/code/planet.py" ]]; then
 fi
 
 # ----------------------------- pick Python -----------------------------------
+# Prefer the cPanel-provided "alt-python" / "selectorctl" interpreters which
+# tend to ship with a working ensurepip, then fall back to whatever is on PATH.
 if [[ -z "${PYTHON_BIN}" ]]; then
-    for candidate in python3.12 python3.11 python3.10 python3.9 python3; do
-        if command -v "${candidate}" >/dev/null 2>&1; then
+    CANDIDATES=(
+        # CloudLinux / cPanel "Python Selector" binaries, newest first.
+        /opt/alt/python312/bin/python3.12
+        /opt/alt/python311/bin/python3.11
+        /opt/alt/python310/bin/python3.10
+        /opt/alt/python39/bin/python3.9
+        # Then anything on PATH.
+        python3.12 python3.11 python3.10 python3.9 python3
+    )
+    for candidate in "${CANDIDATES[@]}"; do
+        if [[ -x "${candidate}" ]] || command -v "${candidate}" >/dev/null 2>&1; then
             PYTHON_BIN="${candidate}"
             break
         fi
@@ -89,17 +100,93 @@ info "Log  directory   : ${LOG_DIR}"
 echo
 
 # ----------------------------- 1. virtualenv ---------------------------------
+# On many cPanel/CloudLinux hosts `python3 -m venv` fails because `ensurepip`
+# is disabled. We try three strategies, in order:
+#   A. plain `python -m venv`
+#   B. `python -m venv --without-pip`, then bootstrap pip via get-pip.py
+#   C. `virtualenv` from the user's --user site-packages
+create_venv() {
+    local py="$1" dst="$2"
+
+    # Strategy A
+    if "${py}" -m venv "${dst}" 2>/tmp/planet-venv.err; then
+        return 0
+    fi
+    warn "python -m venv failed, trying --without-pip fallback"
+
+    rm -rf "${dst}"
+
+    # Strategy B
+    if "${py}" -m venv --without-pip "${dst}" 2>/tmp/planet-venv.err; then
+        info "Bootstrapping pip via get-pip.py ..."
+        local getpip="/tmp/get-pip-$$.py"
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsSL https://bootstrap.pypa.io/get-pip.py -o "${getpip}"
+        else
+            wget -q https://bootstrap.pypa.io/get-pip.py -O "${getpip}"
+        fi
+        # shellcheck disable=SC1091
+        source "${dst}/bin/activate"
+        if python "${getpip}"; then
+            rm -f "${getpip}"
+            deactivate
+            return 0
+        fi
+        rm -f "${getpip}"
+        deactivate || true
+    fi
+    warn "venv --without-pip failed, trying virtualenv package"
+
+    rm -rf "${dst}"
+
+    # Strategy C
+    if ! "${py}" -m virtualenv --version >/dev/null 2>&1; then
+        info "Installing virtualenv via pip --user ..."
+        "${py}" -m pip install --user --upgrade virtualenv \
+            >/dev/null 2>&1 || true
+    fi
+    if "${py}" -m virtualenv "${dst}" 2>/tmp/planet-venv.err; then
+        return 0
+    fi
+
+    echo "---- last error ----" >&2
+    cat /tmp/planet-venv.err >&2 || true
+    return 1
+}
+
 if [[ ! -f "${VENV_DIR}/bin/activate" ]]; then
     info "Creating virtualenv ..."
     mkdir -p "$(dirname "${VENV_DIR}")"
-    "${PYTHON_BIN}" -m venv "${VENV_DIR}"
-    ok "virtualenv created"
+    if create_venv "${PYTHON_BIN}" "${VENV_DIR}"; then
+        ok "virtualenv created at ${VENV_DIR}"
+    else
+        fail "Could not create a virtualenv with ${PYTHON_BIN}.
+Try one of:
+  * Run cPanel -> 'Setup Python App' to create the venv via the UI, then
+    re-run this script with --skip-run to reuse it.
+  * Use a newer Python interpreter:  bash setup.sh --python python3.11
+  * Install virtualenv first:        ${PYTHON_BIN} -m pip install --user virtualenv"
+    fi
 else
     ok "virtualenv already exists, reusing"
 fi
 
 # shellcheck disable=SC1091
 source "${VENV_DIR}/bin/activate"
+
+# Some venvs (notably the --without-pip path) need pip bootstrapped explicitly.
+if ! python -m pip --version >/dev/null 2>&1; then
+    info "pip not present in venv, bootstrapping ..."
+    GETPIP="/tmp/get-pip-$$.py"
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL https://bootstrap.pypa.io/get-pip.py -o "${GETPIP}"
+    else
+        wget -q https://bootstrap.pypa.io/get-pip.py -O "${GETPIP}"
+    fi
+    python "${GETPIP}"
+    rm -f "${GETPIP}"
+    ok "pip bootstrapped"
+fi
 
 # ----------------------------- 2. dependencies -------------------------------
 info "Upgrading pip and installing requirements ..."
