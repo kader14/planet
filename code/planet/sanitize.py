@@ -20,6 +20,26 @@ TIDY_MARKUP = 0
 PREFERRED_TIDY_INTERFACES = ["uTidy", "mxTidy"]
 
 import sgmllib, re
+from urllib.parse import urlparse
+
+# Attributes whose values are URLs — must be sanitized against dangerous schemes.
+_url_attrs = frozenset(['href', 'src', 'action', 'formaction', 'poster', 'background'])
+
+# Schemes that are safe to allow in URL attributes.
+_safe_schemes = frozenset(['http', 'https', 'ftp', 'ftps', 'mailto', 'tel', ''])
+
+def _is_safe_url(url):
+    """Return True if the URL uses a safe scheme (rejects javascript:, vbscript:, data:, etc.)."""
+    # Strip leading whitespace and control characters that browsers ignore.
+    cleaned = re.sub(r'[\x00-\x20]+', '', url).strip()
+    # Decode HTML entities that could hide the scheme (e.g. &#106;avascript:)
+    cleaned = re.sub(r'&#[xX]?[0-9a-fA-F]+;?', '', cleaned)
+    cleaned = re.sub(r'&[a-zA-Z]+;', '', cleaned)
+    try:
+        scheme = urlparse(cleaned).scheme.lower()
+    except Exception:
+        return False
+    return scheme in _safe_schemes
 
 # chardet library auto-detects character encodings
 # Download from http://chardet.feedparser.org/
@@ -202,6 +222,9 @@ class _HTMLSanitizer(_BaseHTMLProcessor):
         if tag in self.acceptable_elements:
             attrs = self.normalize_attrs(attrs)
             attrs = [(key, value) for key, value in attrs if key in self.acceptable_attributes]
+            # Block dangerous URL schemes (javascript:, vbscript:, data:, etc.)
+            attrs = [(key, value) for key, value in attrs
+                     if key not in _url_attrs or _is_safe_url(value)]
             if tag not in self.elements_no_end_tag:
                 self.tag_stack.append(tag)
             _BaseHTMLProcessor.unknown_starttag(self, tag, attrs)

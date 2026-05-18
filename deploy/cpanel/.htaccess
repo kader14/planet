@@ -37,3 +37,28 @@ AddType application/atom+xml  .atom
     RewriteCond %{HTTPS} !=on
     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
+
+# ======================== Security Headers ========================
+<IfModule mod_headers.c>
+    # Prevent clickjacking — only allow framing from same origin.
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Stop browsers from MIME-sniffing the content-type.
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Enable strict XSS filter in older browsers.
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Control how much referrer info is leaked to external sites.
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # HSTS — tell browsers to always use HTTPS for 1 year (include subdomains).
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+    # Content Security Policy — allow self + inline styles (needed for planet output).
+    # Fonts are now self-hosted, no external font/style sources needed.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data:; frame-ancestors 'self';"
+
+    # Permissions Policy — disable features we don't need.
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+</IfModule>
