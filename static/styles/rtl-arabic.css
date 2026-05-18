@@ -1,0 +1,435 @@
+/* =============================================================================
+ * Planet Python — Arabic / RTL design
+ *
+ * Modern, responsive, right-to-left layout. Self-contained: replaces the old
+ * python.org-style stylesheets. Fonts come from Google Fonts (Cairo + Tajawal).
+ * ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700&family=Fira+Code&display=swap');
+
+:root {
+  --color-bg:           #f5f7fb;
+  --color-surface:      #ffffff;
+  --color-surface-alt:  #fafbff;
+  --color-border:       #e3e8f0;
+  --color-text:         #1f2937;
+  --color-text-muted:   #6b7280;
+  --color-link:         #2563eb;
+  --color-link-hover:   #1d4ed8;
+  --color-primary:      #3b82f6;
+  --color-primary-dark: #1e40af;
+  --color-accent:       #fbbf24;
+  --color-card-shadow:  0 1px 3px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .04);
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  --font-body:    'Tajawal', 'Cairo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Cairo', 'Tajawal', 'Segoe UI', system-ui, sans-serif;
+  --font-mono:    'Fira Code', 'Consolas', 'Courier New', monospace;
+}
+
+/* ---------------- Base ----------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  direction: rtl;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+a:hover { color: var(--color-link-hover); text-decoration: underline; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+/* Hide the old "skip to nav" empty-image links left over from the original
+ * python.org skeleton — they are not needed in this layout. */
+.skiptonav { position: absolute; left: -9999px; top: -9999px; }
+
+/* ---------------- Header / Logo ------------------------------------------- */
+#logoheader {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  border: 0;
+  height: auto;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+}
+
+#logoheader a#logolink {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 26px;
+  color: white !important;
+}
+
+#logoheader a#logolink::before {
+  content: "🐍";
+  font-size: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.2));
+}
+
+#logoheader a#logolink::after {
+  content: "بلانيت بايثون";
+}
+
+/* The original GIF logo is replaced by the text + emoji above; hide the image. */
+#logoheader img#logo { display: none; }
+
+/* ---------------- Page layout --------------------------------------------- */
+#content-body {
+  position: static;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+  font-size: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 32px;
+  min-width: 0;
+}
+
+#body-main {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.85;
+  min-width: 0;
+}
+
+/* Page heading ------------------------------------------------------------- */
+h1.pageheading {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 38px;
+  margin: 8px 0 4px;
+  color: var(--color-primary-dark);
+  letter-spacing: -0.5px;
+}
+
+#body-main > p:first-of-type {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 0 0 32px;
+  padding: 0;
+}
+
+/* Date separator (h2 with new_date) ---------------------------------------- */
+#body-main h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--color-primary);
+  margin: 32px 0 16px;
+  padding: 8px 16px;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.08), transparent);
+  border-right: 4px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+
+/* Article cards: hr + h3 marks the start of a new channel ------------------ */
+#body-main hr {
+  display: none; /* we mark the boundary with the card itself */
+}
+
+#body-main h3.post {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  margin: 28px 0 0;
+  padding: 18px 24px 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-bottom: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  font-style: normal;
+  color: var(--color-text);
+}
+
+#body-main h3.post a {
+  color: var(--color-primary-dark);
+}
+#body-main h3.post a:hover {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+#body-main h3.post::before {
+  content: "✍️";
+  margin-left: 10px;
+  font-size: 20px;
+}
+
+/* Article body -------------------------------------------------------------
+ * Each article is rendered as the h3 + h4 + p group following the .post.
+ * We style the surrounding paragraph block as a card by selecting siblings. */
+#body-main h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  margin: 18px 0 8px;
+  padding: 0 24px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+}
+
+#body-main h4 a {
+  color: var(--color-text);
+}
+#body-main h4 a:hover {
+  color: var(--color-link);
+}
+
+#body-main h4 + p {
+  margin: 0;
+  padding: 0 24px 8px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+  color: var(--color-text);
+  line-height: 1.85;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+#body-main h4 + p img {
+  margin: 12px auto;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--color-card-shadow);
+}
+
+/* "by author at date" line — the second <p> after the h4 ------------------- */
+#body-main h4 + p + p {
+  margin: 0;
+  padding: 12px 24px 20px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-top: 1px dashed var(--color-border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  font-size: 13px;
+  color: var(--color-text-muted);
+  box-shadow: var(--color-card-shadow);
+  margin-bottom: 20px;
+}
+
+#body-main h4 + p + p em { font-style: normal; }
+#body-main h4 + p + p a {
+  color: var(--color-text-muted);
+  border-bottom: 1px dashed var(--color-border);
+}
+#body-main h4 + p + p a:hover {
+  color: var(--color-link);
+  border-bottom-color: var(--color-link);
+  text-decoration: none;
+}
+
+/* Generic prose styles inside article bodies ------------------------------- */
+#body-main h4 + p code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 2px 6px;
+  background: #eef2ff;
+  color: #4338ca;
+  border-radius: 4px;
+}
+
+#body-main h4 + p pre {
+  font-family: var(--font-mono);
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  direction: ltr;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+#body-main h4 + p pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+#body-main h4 + p blockquote {
+  margin: 16px 0;
+  padding: 12px 20px;
+  border-right: 4px solid var(--color-primary);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+}
+
+#body-main h4 + p ul,
+#body-main h4 + p ol {
+  padding-right: 24px;
+  margin: 12px 0;
+}
+
+#body-main h4 + p table {
+  border-collapse: collapse;
+  margin: 16px 0;
+  width: 100%;
+}
+
+#body-main h4 + p table th,
+#body-main h4 + p table td {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  text-align: right;
+}
+
+/* ---------------- Sidebar (channels / links) ------------------------------ */
+#left-hand-navigation {
+  position: static;
+  width: auto;
+  padding: 0;
+}
+
+#menu {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  font-size: 100%;
+  position: sticky;
+  top: 88px;
+}
+
+#menu ul.level-one {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#menu ul.level-one > li {
+  display: block;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-primary-dark);
+  text-transform: none;
+  box-shadow: var(--color-card-shadow);
+}
+
+/* The first <li> (no heading) is the toolbar with RSS/Titles links --------- */
+#menu ul.level-one > li:first-child {
+  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+  color: white;
+}
+
+#menu ul.level-two {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 400;
+  font-family: var(--font-body);
+}
+
+#menu ul.level-two li { display: block; }
+
+#menu ul.level-one a {
+  display: block;
+  border: 0;
+  background: transparent;
+  padding: 8px 12px;
+  margin: 0;
+  width: auto;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--color-text);
+  text-transform: none;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+#menu ul.level-one a:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+/* The toolbar links (in the gradient first card) need to be light-coloured. */
+#menu ul.level-one > li:first-child a {
+  color: rgba(255, 255, 255, .92);
+}
+#menu ul.level-one > li:first-child a:hover {
+  background: rgba(255, 255, 255, .12);
+  color: white;
+}
+
+/* ---------------- Responsive (mobile) ------------------------------------- */
+@media (max-width: 880px) {
+  #content-body {
+    grid-template-columns: 1fr;
+    padding: 16px 12px 60px;
+    gap: 24px;
+  }
+
+  #logoheader a#logolink {
+    padding: 14px 16px;
+    font-size: 22px;
+  }
+  #logoheader a#logolink::before { font-size: 26px; }
+
+  h1.pageheading { font-size: 28px; }
+
+  #body-main h3.post,
+  #body-main h4,
+  #body-main h4 + p,
+  #body-main h4 + p + p {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  #menu { position: static; }
+}
+
+/* ---------------- Cleanup of legacy styles -------------------------------- *
+ * The old python.org templates ship some CSS hooks we no longer use.
+ * Hide them so they don't leak through.                                     */
+#searchbox, #utility-menu, #breadcrumb, #screen-switcher, #sidebar-wrapper,
+#footer #credits {
+  display: none !important;
+}
