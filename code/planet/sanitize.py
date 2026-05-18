@@ -20,7 +20,8 @@ TIDY_MARKUP = 0
 PREFERRED_TIDY_INTERFACES = ["uTidy", "mxTidy"]
 
 import sgmllib, re
-from urllib.parse import urlparse
+import html as _html
+from urllib.parse import urlparse, unquote
 
 # Attributes whose values are URLs — must be sanitized against dangerous schemes.
 _url_attrs = frozenset(['href', 'src', 'action', 'formaction', 'poster', 'background'])
@@ -28,13 +29,35 @@ _url_attrs = frozenset(['href', 'src', 'action', 'formaction', 'poster', 'backgr
 # Schemes that are safe to allow in URL attributes.
 _safe_schemes = frozenset(['http', 'https', 'ftp', 'ftps', 'mailto', 'tel', ''])
 
+# Whitespace and zero-width characters that browsers ignore inside URL schemes.
+# Includes ASCII control + space, plus U+FEFF (BOM) and zero-width / line / paragraph separators.
+_url_strip_re = re.compile(r'[\x00-\x20\ufeff\u200b-\u200f\u2028\u2029]+')
+
 def _is_safe_url(url):
-    """Return True if the URL uses a safe scheme (rejects javascript:, vbscript:, data:, etc.)."""
-    # Strip leading whitespace and control characters that browsers ignore.
-    cleaned = re.sub(r'[\x00-\x20]+', '', url).strip()
-    # Decode HTML entities that could hide the scheme (e.g. &#106;avascript:)
-    cleaned = re.sub(r'&#[xX]?[0-9a-fA-F]+;?', '', cleaned)
-    cleaned = re.sub(r'&[a-zA-Z]+;', '', cleaned)
+    """Return True if the URL uses a safe scheme.
+
+    Rejects javascript:, vbscript:, data:, etc. — including obfuscation via:
+    - HTML entities:        javascript&#58;alert(1), &#x3a;, &colon;
+    - Percent-escapes:      java%09script:alert(1), java%0ascript:alert(1)
+    - Unicode whitespace:   \\ufeffjavascript:, leading BOM/zero-width chars
+    - Mixed case:           JAVASCRIPT:, Java\\tscript:
+    """
+    if not isinstance(url, str):
+        return False
+    # Decode HTML entities the same way a browser does (&#58; -> ':', &colon; -> ':').
+    try:
+        cleaned = _html.unescape(url)
+    except Exception:
+        return False
+    # Remove all whitespace / BOM / zero-width chars browsers ignore inside the scheme.
+    cleaned = _url_strip_re.sub('', cleaned)
+    # If the scheme region (before first ':') contains a percent-escape, refuse.
+    # WHATWG-conformant browsers strip %09/%0A/%0D before parsing, so we cannot
+    # safely lowercase-and-compare; just reject. Legitimate URLs never need %xx
+    # in the scheme.
+    head, sep, _ = cleaned.partition(':')
+    if sep and '%' in head:
+        return False
     try:
         scheme = urlparse(cleaned).scheme.lower()
     except Exception:
