@@ -287,7 +287,14 @@ class Planet:
             self.cache_directory = self.config.get("Planet", "cache_directory")
         if self.config.has_option("Planet", "new_feed_items"):
             self.new_feed_items  = int(self.config.get("Planet", "new_feed_items"))
-        self.user_agent = "%s +%s %s" % (planet_name, planet_link,
+        # HTTP headers must be ISO-8859-1 (latin-1) clean. The planet
+        # name and link can contain non-ASCII characters (e.g. an Arabic
+        # planet name like "كوكب بايثون"); URL-encode them so the
+        # User-Agent header stays serialisable.
+        import urllib.parse as _urlparse
+        _safe_name = _urlparse.quote(str(planet_name), safe="")
+        _safe_link = _urlparse.quote(str(planet_link), safe=":/?&=#")
+        self.user_agent = "%s +%s %s" % (_safe_name, _safe_link,
                                               self.user_agent)
         if self.config.has_option("Planet", "filter"):
             self.filter = self.config.get("Planet", "filter")
