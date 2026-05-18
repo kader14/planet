@@ -150,6 +150,21 @@ class Planet:
             channels[channel] = template_info(channel, date_format)
             channels_list.append(channels[channel])
 
+            # Make sure every channel exposes a ``link`` and a ``name`` to
+            # the templates. Without this, htmltmpl falls back to the
+            # planet-wide ``link`` / ``name`` whenever the feed has not
+            # been fetched yet (e.g. a freshly added feed, a 4xx/5xx
+            # response, or a feed that does not advertise a self-link),
+            # which makes every "channel link" in the sidebar point at
+            # the planet itself instead of the source blog.
+            info = channels[channel]
+            if not info.get("link"):
+                info["link"] = channel.url
+            if not info.get("name"):
+                info["name"] = channel.get_name("name") or channel.url
+            if not info.get("title"):
+                info["title"] = info["name"]
+
             # identify inactive feeds
             if activity_horizon:
                 latest = channel.items(sorted=1)
