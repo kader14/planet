@@ -80,6 +80,51 @@ class stripHtml(sgmllib.SGMLParser):
     def handle_data(self, data):
         if data: self.result+=data
 
+# Common feed-path suffixes used by WordPress, Blogger, Hugo, Atom etc.
+# Listed longest-first so ``/feed/atom/`` matches before ``/feed/``.
+_FEED_SUFFIXES = (
+    "/feed/atom/", "/feed/atom",
+    "/feed/rss/", "/feed/rss",
+    "/feeds/posts/default/", "/feeds/posts/default",
+    "/feeds/all.atom.xml", "/feeds/all.rss.xml",
+    "/feed.xml", "/feed.atom", "/feed.rss",
+    "/atom.xml", "/atom",
+    "/rss.xml", "/rss",
+    "/index.xml",
+    "/feed/", "/feed",
+)
+
+
+def _site_url_from_feed(feed_url):
+    """Best-effort guess at the human site URL behind a feed URL.
+
+    Strips well-known feed-path suffixes (``/feed/``, ``/feed.xml``,
+    ``/rss``, ``/index.xml`` and friends) and the trailing query string
+    when it only carries feed-format markers. Falls back to the original
+    URL when nothing matches, so callers never get None.
+    """
+    if not feed_url:
+        return feed_url
+
+    url = feed_url
+    # Drop a trailing query string — it usually only carries
+    # ``?feed=rss2`` / ``?format=rss`` style markers and never points at
+    # a useful human page anyway.
+    qs = url.find("?")
+    if qs != -1:
+        url = url[:qs]
+
+    lowered = url.lower()
+    for suffix in _FEED_SUFFIXES:
+        if lowered.endswith(suffix):
+            url = url[: -len(suffix)]
+            break
+
+    if not url.endswith("/"):
+        url += "/"
+    return url
+
+
 def template_info(item, date_format):
     """Produce a dictionary of template information."""
     info = {}
@@ -157,9 +202,14 @@ class Planet:
             # response, or a feed that does not advertise a self-link),
             # which makes every "channel link" in the sidebar point at
             # the planet itself instead of the source blog.
+            #
+            # When we have to fall back to the *feed* URL, strip common
+            # feed-path suffixes (``/feed/``, ``/feed.xml``, ``/rss``…) so
+            # the visible link points at the human site root rather than
+            # at the XML endpoint.
             info = channels[channel]
             if not info.get("link"):
-                info["link"] = channel.url
+                info["link"] = _site_url_from_feed(channel.url)
             if not info.get("name"):
                 info["name"] = channel.get_name("name") or channel.url
             if not info.get("title"):
