@@ -118,7 +118,8 @@ Every 30 minutes the script will:
 
 * activate the virtualenv,
 * run `python3 code/planet.py config/config.ini`,
-* `rsync` the bundled `static/styles` and `static/images` into `output_dir`,
+* `rsync` the bundled `static/styles`, `static/images` and `static/fonts`
+  into `output_dir`,
 * append a timestamped line to `~/planet/logs/planet.log`.
 
 For the very first run, execute it once manually to confirm everything works:

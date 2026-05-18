@@ -20,6 +20,49 @@ TIDY_MARKUP = 0
 PREFERRED_TIDY_INTERFACES = ["uTidy", "mxTidy"]
 
 import sgmllib, re
+import html as _html
+from urllib.parse import urlparse, unquote
+
+# Attributes whose values are URLs — must be sanitized against dangerous schemes.
+_url_attrs = frozenset(['href', 'src', 'action', 'formaction', 'poster', 'background'])
+
+# Schemes that are safe to allow in URL attributes.
+_safe_schemes = frozenset(['http', 'https', 'ftp', 'ftps', 'mailto', 'tel', ''])
+
+# Whitespace and zero-width characters that browsers ignore inside URL schemes.
+# Includes ASCII control + space, plus U+FEFF (BOM) and zero-width / line / paragraph separators.
+_url_strip_re = re.compile(r'[\x00-\x20\ufeff\u200b-\u200f\u2028\u2029]+')
+
+def _is_safe_url(url):
+    """Return True if the URL uses a safe scheme.
+
+    Rejects javascript:, vbscript:, data:, etc. — including obfuscation via:
+    - HTML entities:        javascript&#58;alert(1), &#x3a;, &colon;
+    - Percent-escapes:      java%09script:alert(1), java%0ascript:alert(1)
+    - Unicode whitespace:   \\ufeffjavascript:, leading BOM/zero-width chars
+    - Mixed case:           JAVASCRIPT:, Java\\tscript:
+    """
+    if not isinstance(url, str):
+        return False
+    # Decode HTML entities the same way a browser does (&#58; -> ':', &colon; -> ':').
+    try:
+        cleaned = _html.unescape(url)
+    except Exception:
+        return False
+    # Remove all whitespace / BOM / zero-width chars browsers ignore inside the scheme.
+    cleaned = _url_strip_re.sub('', cleaned)
+    # If the scheme region (before first ':') contains a percent-escape, refuse.
+    # WHATWG-conformant browsers strip %09/%0A/%0D before parsing, so we cannot
+    # safely lowercase-and-compare; just reject. Legitimate URLs never need %xx
+    # in the scheme.
+    head, sep, _ = cleaned.partition(':')
+    if sep and '%' in head:
+        return False
+    try:
+        scheme = urlparse(cleaned).scheme.lower()
+    except Exception:
+        return False
+    return scheme in _safe_schemes
 
 # chardet library auto-detects character encodings
 # Download from http://chardet.feedparser.org/
@@ -202,6 +245,9 @@ class _HTMLSanitizer(_BaseHTMLProcessor):
         if tag in self.acceptable_elements:
             attrs = self.normalize_attrs(attrs)
             attrs = [(key, value) for key, value in attrs if key in self.acceptable_attributes]
+            # Block dangerous URL schemes (javascript:, vbscript:, data:, etc.)
+            attrs = [(key, value) for key, value in attrs
+                     if key not in _url_attrs or _is_safe_url(value)]
             if tag not in self.elements_no_end_tag:
                 self.tag_stack.append(tag)
             _BaseHTMLProcessor.unknown_starttag(self, tag, attrs)

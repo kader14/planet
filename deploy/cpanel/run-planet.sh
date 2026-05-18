@@ -89,9 +89,12 @@ if command -v rsync >/dev/null 2>&1; then
         "${PLANET_ROOT}/static/styles/" "${OUTPUT_DIR}/styles/"
     rsync -a --delete-after \
         "${PLANET_ROOT}/static/images/" "${OUTPUT_DIR}/images/"
+    rsync -a --delete-after \
+        "${PLANET_ROOT}/static/fonts/" "${OUTPUT_DIR}/fonts/"
 else
     cp -r "${PLANET_ROOT}/static/styles/." "${OUTPUT_DIR}/styles/"
     cp -r "${PLANET_ROOT}/static/images/." "${OUTPUT_DIR}/images/"
+    cp -r "${PLANET_ROOT}/static/fonts/." "${OUTPUT_DIR}/fonts/"
 fi
 
 log "Static assets synced into ${OUTPUT_DIR}"

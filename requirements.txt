@@ -1,2 +1,4 @@
-feedparser>=6.0,<7
-sgmllib3k>=1.0,<2
+# Pinned versions to prevent supply-chain attacks.
+# Update deliberately after testing: pip install --upgrade <pkg> && pip freeze | grep <pkg>
+feedparser==6.0.12
+sgmllib3k==1.0.0
