@@ -79,8 +79,8 @@ img { max-width: 100%; height: auto; display: block; }
 #logoheader a#logolink {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 24px;
+  gap: 14px;
+  padding: 14px 24px;
   max-width: 1200px;
   margin: 0 auto;
   text-decoration: none;
@@ -90,17 +90,28 @@ img { max-width: 100%; height: auto; display: block; }
   color: white !important;
 }
 
+/* Real Python logo (SVG) — sits inside the white pill so the colors stay
+ * recognisable on the gradient header. */
 #logoheader a#logolink::before {
-  content: "🐍";
-  font-size: 32px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,.2));
+  content: "";
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  background: white;
+  background-image: url('/images/python-logo.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 30px 30px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
 }
 
 #logoheader a#logolink::after {
-  content: "بلانيت بايثون";
+  content: "كوكب بايثون";
 }
 
-/* The original GIF logo is replaced by the text + emoji above; hide the image. */
+/* The original GIF logo is replaced by the SVG + text above; hide the IMG. */
 #logoheader img#logo { display: none; }
 
 /* ---------------- Page layout --------------------------------------------- */
