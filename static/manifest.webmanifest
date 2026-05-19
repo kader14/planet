@@ -1,0 +1,28 @@
+{
+  "name": "كوكب بايثون - Planet Python Arabic",
+  "short_name": "كوكب بايثون",
+  "description": "مرجعك العربي لآخر تدوينات مطوّري بايثون.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl",
+  "background_color": "#f5f7fb",
+  "theme_color": "#1e3a8a",
+  "categories": ["news", "education", "developer"],
+  "icons": [
+    {
+      "src": "/images/python-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

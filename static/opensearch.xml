@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+  <ShortName>كوكب بايثون</ShortName>
+  <LongName>كوكب بايثون - Planet Python Arabic</LongName>
+  <Description>البحث في تدوينات مطوّري بايثون العرب</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image height="64" width="64" type="image/svg+xml">https://planet.pyarabic.com/images/python-logo.svg</Image>
+  <Url type="text/html" method="get"
+       template="https://www.google.com/search?q=site%3Aplanet.pyarabic.com+{searchTerms}" />
+  <Url type="application/rss+xml" template="https://planet.pyarabic.com/rss20.xml" />
+  <Url type="application/atom+xml" template="https://planet.pyarabic.com/atom.xml" />
+  <Language>ar</Language>
+  <SearchForm>https://planet.pyarabic.com/</SearchForm>
+  <Developer>مجتمع بايثون العربي</Developer>
+  <Contact>planet@pyarabic.com</Contact>
+  <Attribution>كوكب بايثون</Attribution>
+  <SyndicationRight>open</SyndicationRight>
+  <AdultContent>false</AdultContent>
+</OpenSearchDescription>

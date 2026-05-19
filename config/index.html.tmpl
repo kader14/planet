@@ -23,33 +23,110 @@
   <link rel="apple-touch-icon" href="/images/python-logo.svg" />
 
   <meta name="generator" content="<TMPL_VAR generator>" />
-  <meta name="keywords" content="بايثون, مدونات, Python, planet, RSS, تجميع, خلاصات, مطورين عرب, برمجة" />
-  <meta name="description" content="تجميع تلقائي لآخر تدوينات مجتمع بايثون العربي — مقالات حول البرمجة، الأخبار التقنية، والمشاريع مفتوحة المصدر." />
-  <meta name="author" content="مجتمع بايثون العربي" />
-  <meta name="robots" content="index, follow" />
 
-  <!-- Open Graph — Facebook, LinkedIn, WhatsApp, Telegram, etc. -->
+  <!-- ============================================================
+       Search engine + content meta
+       Description: 155 chars, keyword-rich, action-driven Arabic.
+       ============================================================ -->
+  <meta name="description" content="كوكب بايثون: مرجعك العربي لآخر تدوينات مطوّري بايثون. تجميع لحظي للمقالات حول Django وFlask والذكاء الاصطناعي وعلوم البيانات والمشاريع مفتوحة المصدر." />
+  <meta name="abstract" content="مجمّع تدوينات Python باللغة العربية محدّث كل 30 دقيقة." />
+  <meta name="subject" content="بايثون، البرمجة، التقنية، تطوير الويب" />
+  <meta name="rating" content="general" />
+  <meta name="distribution" content="global" />
+  <meta name="revisit-after" content="1 day" />
+  <meta name="copyright" content="كوكب بايثون - مجتمع بايثون العربي" />
+
+  <!-- Keyword block: Arabic + English + framework names that searchers actually type. -->
+  <meta name="keywords" content="كوكب بايثون, بايثون عربي, مدونات بايثون, مطورين عرب, تعلم بايثون, دروس بايثون, Python بالعربي, Planet Python, Python Arabic, جانغو, Django, فلاسك, Flask, FastAPI, نمباي, NumPy, باندا, Pandas, تطوير ويب, ذكاء اصطناعي, Machine Learning, تعلم آلي, علم البيانات, Data Science, خلاصات RSS, تجميع تدوينات, برمجة, مفتوح المصدر, open source, مكتبات بايثون" />
+
+  <!-- Author + ownership -->
+  <meta name="author" content="مجتمع بايثون العربي" />
+  <meta name="publisher" content="كوكب بايثون" />
+  <meta name="owner" content="planet@pyarabic.com" />
+  <meta name="reply-to" content="planet@pyarabic.com" />
+
+  <!-- Crawler directives — be explicit so Googlebot/Bingbot don't infer defaults. -->
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <meta name="bingbot" content="index, follow" />
+
+  <!-- Geographic / language signals -->
+  <meta name="language" content="Arabic" />
+  <meta http-equiv="content-language" content="ar" />
+  <meta name="geo.region" content="AR" />
+  <meta name="geo.placename" content="العالم العربي" />
+
+  <!-- Mobile / browser hints -->
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="كوكب بايثون" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="application-name" content="كوكب بايثون" />
+  <meta name="msapplication-TileColor" content="#1e3a8a" />
+  <meta name="color-scheme" content="light dark" />
+
+  <!-- Dublin Core — used by libraries, academic crawlers, some RSS readers. -->
+  <meta name="DC.title" content="كوكب بايثون - Planet Python Arabic" />
+  <meta name="DC.creator" content="مجتمع بايثون العربي" />
+  <meta name="DC.subject" content="بايثون، البرمجة، التقنية" />
+  <meta name="DC.description" content="تجميع تدوينات مطوري بايثون باللغة العربية." />
+  <meta name="DC.language" content="ar" />
+  <meta name="DC.type" content="Collection" />
+  <meta name="DC.format" content="text/html" />
+  <meta name="DC.identifier" content="https://planet.pyarabic.com/" />
+  <meta name="DC.rights" content="Creative Commons Attribution" />
+
+  <!-- ============================================================
+       Open Graph — Facebook, LinkedIn, WhatsApp, Telegram, Discord
+       ============================================================ -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="كوكب بايثون" />
-  <meta property="og:title" content="<TMPL_VAR name>" />
-  <meta property="og:description" content="تجميع تلقائي لآخر تدوينات مجتمع بايثون العربي — مقالات حول البرمجة، الأخبار التقنية، والمشاريع مفتوحة المصدر." />
+  <meta property="og:title" content="كوكب بايثون - تدوينات مطوري بايثون العرب" />
+  <meta property="og:description" content="مرجعك العربي لآخر تدوينات مطوّري بايثون. مقالات حول Django وFlask والذكاء الاصطناعي وعلوم البيانات. تحديث كل 30 دقيقة." />
   <meta property="og:url" content="https://planet.pyarabic.com/" />
   <meta property="og:image" content="https://planet.pyarabic.com/images/og-image.png" />
+  <meta property="og:image:secure_url" content="https://planet.pyarabic.com/images/og-image.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="كوكب بايثون - تجميع تدوينات مجتمع بايثون العربي" />
   <meta property="og:locale" content="ar_AR" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta property="og:updated_time" content="<TMPL_VAR date>" />
+  <!-- Article-style metadata for richer link unfurling. -->
+  <meta property="article:publisher" content="https://github.com/kader14/planet" />
+  <meta property="article:section" content="بايثون" />
+  <meta property="article:tag" content="بايثون" />
+  <meta property="article:tag" content="Python" />
+  <meta property="article:tag" content="برمجة" />
+  <meta property="article:tag" content="تطوير ويب" />
 
-  <!-- Twitter / X large preview card. -->
+  <!-- ============================================================
+       Twitter / X — large image card with explicit dimensions.
+       ============================================================ -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="<TMPL_VAR name>" />
-  <meta name="twitter:description" content="تجميع تلقائي لآخر تدوينات مجتمع بايثون العربي." />
+  <meta name="twitter:title" content="كوكب بايثون - تدوينات مطوري بايثون العرب" />
+  <meta name="twitter:description" content="مرجعك العربي لآخر تدوينات مطوّري بايثون. Django وFlask والذكاء الاصطناعي. تحديث كل 30 دقيقة." />
   <meta name="twitter:image" content="https://planet.pyarabic.com/images/og-image.png" />
   <meta name="twitter:image:alt" content="كوكب بايثون - تجميع تدوينات مجتمع بايثون العربي" />
+  <meta name="twitter:domain" content="planet.pyarabic.com" />
+  <meta name="twitter:url" content="https://planet.pyarabic.com/" />
 
-  <link rel="alternate" type="application/rss+xml" title="RSS" href="rss20.xml" />
-  <link rel="alternate" type="application/atom+xml" title="Atom" href="atom.xml" />
+  <link rel="alternate" type="application/rss+xml" title="كوكب بايثون - RSS" href="rss20.xml" />
+  <link rel="alternate" type="application/atom+xml" title="كوكب بايثون - Atom" href="atom.xml" />
+  <link rel="alternate" type="text/html" hreflang="ar" href="https://planet.pyarabic.com/" />
+  <link rel="alternate" type="text/html" hreflang="x-default" href="https://planet.pyarabic.com/" />
+
+  <!-- Discoverability hints -->
+  <link rel="search" type="application/opensearchdescription+xml" title="كوكب بايثون" href="/opensearch.xml" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="me" href="https://github.com/kader14/planet" />
+  <link rel="author" href="https://github.com/kader14" />
+  <link rel="help" href="https://github.com/kader14/planet#readme" />
+
+  <!-- Preconnect / DNS-prefetch for the GitHub avatars/links the sidebar exposes. -->
+  <link rel="dns-prefetch" href="//github.com" />
 
   <!-- Schema.org JSON-LD: WebSite + Organization for richer Google search results. -->
   <script type="application/ld+json">
@@ -61,10 +138,19 @@
         "@id": "https://planet.pyarabic.com/#website",
         "url": "https://planet.pyarabic.com/",
         "name": "كوكب بايثون",
-        "alternateName": "Planet Python Arabic",
+        "alternateName": ["Planet Python Arabic", "Kawkab Python", "كوكب بايثون العربي"],
         "description": "تجميع تلقائي لآخر تدوينات مجتمع بايثون العربي.",
         "inLanguage": "ar",
-        "publisher": { "@id": "https://planet.pyarabic.com/#organization" }
+        "keywords": "بايثون, Python, مدونات, برمجة, مطورين عرب, جانغو, Django, Flask, ذكاء اصطناعي, علوم البيانات",
+        "publisher": { "@id": "https://planet.pyarabic.com/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://www.google.com/search?q=site%3Aplanet.pyarabic.com+{search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
       },
       {
         "@type": "Organization",
@@ -72,23 +158,59 @@
         "name": "كوكب بايثون",
         "alternateName": "Planet Python Arabic",
         "url": "https://planet.pyarabic.com/",
+        "email": "planet@pyarabic.com",
+        "description": "مجتمع المطورين الناطقين بالعربية حول لغة بايثون.",
         "logo": {
           "@type": "ImageObject",
           "url": "https://planet.pyarabic.com/images/og-image.png",
           "width": 1200,
           "height": 630
         },
+        "image": "https://planet.pyarabic.com/images/og-image.png",
+        "knowsAbout": ["Python", "Django", "Flask", "FastAPI", "Machine Learning", "Data Science", "Web Development", "Open Source"],
+        "knowsLanguage": ["ar", "en"],
         "sameAs": [
           "https://github.com/kader14/planet"
-        ]
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "planet@pyarabic.com",
+          "contactType": "editorial",
+          "availableLanguage": ["Arabic", "English"]
+        }
       },
       {
         "@type": "CollectionPage",
+        "@id": "https://planet.pyarabic.com/#webpage",
         "url": "https://planet.pyarabic.com/",
         "name": "كوكب بايثون - الصفحة الرئيسية",
         "description": "آخر التدوينات من مدونات مجتمع بايثون العربي.",
         "inLanguage": "ar",
-        "isPartOf": { "@id": "https://planet.pyarabic.com/#website" }
+        "isPartOf": { "@id": "https://planet.pyarabic.com/#website" },
+        "about": { "@id": "https://planet.pyarabic.com/#organization" },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://planet.pyarabic.com/images/og-image.png"
+        },
+        "audience": {
+          "@type": "Audience",
+          "audienceType": "مطورو البرمجيات الناطقون بالعربية",
+          "geographicArea": {
+            "@type": "Place",
+            "name": "العالم العربي"
+          }
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "الرئيسية",
+            "item": "https://planet.pyarabic.com/"
+          }
+        ]
       }
     ]
   }

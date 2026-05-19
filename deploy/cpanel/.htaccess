@@ -40,10 +40,11 @@ DirectoryIndex index.html
 </IfModule>
 
 # Make sure feeds and fonts are served with the correct content types.
-AddType application/rss+xml   .rss .xml
-AddType application/atom+xml  .atom
-AddType font/woff2            .woff2
-AddType font/woff             .woff
+AddType application/rss+xml          .rss .xml
+AddType application/atom+xml         .atom
+AddType font/woff2                   .woff2
+AddType font/woff                    .woff
+AddType application/manifest+json    .webmanifest
 
 # Force HTTPS (cPanel + AutoSSL gives you a free certificate).
 <IfModule mod_rewrite.c>
