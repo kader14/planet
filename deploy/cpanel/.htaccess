@@ -79,6 +79,9 @@ AddType font/woff             .woff
     #   class selectors only, so 'unsafe-inline' is not needed.
     # - img-src allows external HTTPS hosts because feed entries link to
     #   images on the original blog hosts.
+    # NOTE: <script type="application/ld+json"> blocks (used for Schema.org
+    # SEO data) are NOT subject to script-src per CSP spec — the type is
+    # non-executable, so browsers permit them with no extra CSP rule.
     Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https: data:; frame-ancestors 'self';"
 
     # Permissions Policy — disable features we don't need.

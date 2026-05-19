@@ -1,0 +1,10 @@
+# Robots policy for planet.pyarabic.com
+# Allow all well-behaved crawlers — this is a public aggregator and we *want*
+# it indexed. The sitemap below tells search engines about the canonical URLs.
+
+User-agent: *
+Allow: /
+Disallow: /cache/
+Disallow: /logs/
+
+Sitemap: https://planet.pyarabic.com/sitemap.xml
