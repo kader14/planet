@@ -214,9 +214,10 @@ class _HTMLSanitizer(_BaseHTMLProcessor):
     acceptable_attributes = ['abbr', 'accept', 'accept-charset', 'accesskey',
       'action', 'align', 'alt', 'axis', 'border', 'cellpadding', 'cellspacing',
       'char', 'charoff', 'charset', 'checked', 'cite', 'class', 'clear', 'cols',
-      'colspan', 'color', 'compact', 'coords', 'datetime', 'dir', 'disabled',
-      'enctype', 'for', 'frame', 'headers', 'height', 'href', 'hreflang', 'hspace',
-      'id', 'ismap', 'label', 'lang', 'longdesc', 'maxlength', 'media', 'method',
+      'colspan', 'color', 'compact', 'coords', 'datetime', 'decoding', 'dir',
+      'disabled', 'enctype', 'for', 'frame', 'headers', 'height', 'href',
+      'hreflang', 'hspace', 'id', 'ismap', 'label', 'lang', 'loading',
+      'longdesc', 'maxlength', 'media', 'method',
       'multiple', 'name', 'nohref', 'noshade', 'nowrap', 'prompt', 'readonly',
       'rel', 'rev', 'rows', 'rowspan', 'rules', 'scope', 'selected', 'shape', 'size',
       'span', 'src', 'start', 'summary', 'tabindex', 'target', 'title', 'type',
@@ -248,6 +249,14 @@ class _HTMLSanitizer(_BaseHTMLProcessor):
             # Block dangerous URL schemes (javascript:, vbscript:, data:, etc.)
             attrs = [(key, value) for key, value in attrs
                      if key not in _url_attrs or _is_safe_url(value)]
+            # Add lazy loading + async decoding to <img> for free perf wins
+            # (browsers that don't recognise the attributes ignore them).
+            if tag == 'img':
+                keys = {k for k, _ in attrs}
+                if 'loading' not in keys:
+                    attrs.append(('loading', 'lazy'))
+                if 'decoding' not in keys:
+                    attrs.append(('decoding', 'async'))
             if tag not in self.elements_no_end_tag:
                 self.tag_stack.append(tag)
             _BaseHTMLProcessor.unknown_starttag(self, tag, attrs)

@@ -81,9 +81,10 @@ else
     exit 1
 fi
 
-# --- Sync static assets (stylesheets + images) -------------------------------
-# The templates reference /styles/... and /images/... at the docroot, so the
-# contents of static/ must be available beside the generated HTML.
+# --- Sync static assets (stylesheets + images + fonts + scripts) ------------
+# The templates reference /styles/..., /images/..., /fonts/... and /scripts/...
+# at the docroot, so the contents of static/ must be available beside the
+# generated HTML.
 if command -v rsync >/dev/null 2>&1; then
     rsync -a --delete-after \
         "${PLANET_ROOT}/static/styles/" "${OUTPUT_DIR}/styles/"
@@ -91,10 +92,13 @@ if command -v rsync >/dev/null 2>&1; then
         "${PLANET_ROOT}/static/images/" "${OUTPUT_DIR}/images/"
     rsync -a --delete-after \
         "${PLANET_ROOT}/static/fonts/" "${OUTPUT_DIR}/fonts/"
+    rsync -a --delete-after \
+        "${PLANET_ROOT}/static/scripts/" "${OUTPUT_DIR}/scripts/"
 else
     cp -r "${PLANET_ROOT}/static/styles/." "${OUTPUT_DIR}/styles/"
     cp -r "${PLANET_ROOT}/static/images/." "${OUTPUT_DIR}/images/"
     cp -r "${PLANET_ROOT}/static/fonts/." "${OUTPUT_DIR}/fonts/"
+    cp -r "${PLANET_ROOT}/static/scripts/." "${OUTPUT_DIR}/scripts/"
 fi
 
 log "Static assets synced into ${OUTPUT_DIR}"

@@ -3,19 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1e3a8a" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
   <title><TMPL_VAR name></title>
-  <link rel="stylesheet" type="text/css" media="screen" href="/styles/rtl-arabic.css" />
+
+  <!-- Preload the most-used Arabic font so first paint doesn't wait on CSS parsing. -->
+  <link rel="preload" href="/fonts/tajawal-400-arabic.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin />
+
+  <!-- Stylesheet — preloaded so the browser starts fetching it earlier. -->
+  <link rel="preload" href="/styles/rtl-arabic.css" as="style" />
+  <link rel="stylesheet" href="/styles/rtl-arabic.css" />
+
+  <!-- Favicon (reuses the existing SVG logo). -->
+  <link rel="icon" type="image/svg+xml" href="/images/python-logo.svg" />
+  <link rel="apple-touch-icon" href="/images/python-logo.svg" />
+
   <meta name="generator" content="<TMPL_VAR generator>" />
   <meta name="keywords" content="بايثون, مدونات, Python, planet, RSS, تجميع, خلاصات" />
-  <meta name="description" content="آخر التدوينات من مدونات مجتمع بايثون." />
+  <meta name="description" content="آخر التدوينات من مدونات مجتمع بايثون — كوكب بايثون العربي." />
+
+  <!-- Open Graph / Twitter Card for richer previews on social media. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="<TMPL_VAR name>" />
+  <meta property="og:description" content="آخر التدوينات من مدونات مجتمع بايثون — كوكب بايثون العربي." />
+  <meta property="og:image" content="/images/python-logo.svg" />
+  <meta property="og:locale" content="ar_AR" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="<TMPL_VAR name>" />
+  <meta name="twitter:description" content="آخر التدوينات من مدونات مجتمع بايثون." />
+  <meta name="twitter:image" content="/images/python-logo.svg" />
+
   <link rel="alternate" type="application/rss+xml" title="RSS" href="rss20.xml" />
   <link rel="alternate" type="application/atom+xml" title="Atom" href="atom.xml" />
 </head>
 
 <body>
+  <!-- Reading-progress bar at the very top of the viewport. -->
+  <div id="reading-progress" aria-hidden="true"></div>
+
   <!-- شعار الموقع -->
   <h1 id="logoheader">
-    <a href="/" id="logolink" accesskey="1"><img id="logo" src="/images/python-logo.svg" alt="كوكب بايثون" /></a>
+    <a href="/" id="logolink" accesskey="1"><img id="logo" src="/images/python-logo.svg" alt="كوكب بايثون" width="44" height="44" /></a>
   </h1>
 
   <div id="content-body">
@@ -99,5 +128,31 @@
     </div>
     </aside>
   </div>
+
+  <!-- Floating "back to top" button — pure-CSS visibility via :target+scroll. -->
+  <a href="#top" id="back-to-top" aria-label="العودة لأعلى" title="العودة لأعلى">↑</a>
+
+  <!-- Footer -->
+  <footer id="site-footer">
+    <div class="footer-inner">
+      <p>
+        كوكب بايثون العربي · مولّد بـ
+        <a href="https://github.com/kader14/planet" rel="noopener">Planet</a>
+      </p>
+      <p class="footer-links">
+        <a href="rss20.xml" rel="alternate">RSS</a>
+        ·
+        <a href="atom.xml" rel="alternate">Atom</a>
+        ·
+        <a href="opml.xml">OPML</a>
+        ·
+        <a href="https://github.com/kader14/planet" rel="noopener">GitHub</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Tiny external script: reading-progress bar + back-to-top visibility.
+       Loaded with `defer` so it doesn't block parsing. -->
+  <script src="/scripts/site.js" defer></script>
 </body>
 </html>

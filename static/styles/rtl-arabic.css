@@ -109,7 +109,12 @@
   --color-primary:      #3b82f6;
   --color-primary-dark: #1e40af;
   --color-accent:       #fbbf24;
+  --color-code-bg:      #eef2ff;
+  --color-code-text:    #4338ca;
+  --color-pre-bg:       #0f172a;
+  --color-pre-text:     #e2e8f0;
   --color-card-shadow:  0 1px 3px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .04);
+  --color-card-shadow-hover: 0 4px 12px rgba(15, 23, 42, .08), 0 16px 40px rgba(15, 23, 42, .06);
 
   --radius-sm: 6px;
   --radius-md: 12px;
@@ -118,6 +123,29 @@
   --font-body:    'Tajawal', 'Cairo', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-display: 'Cairo', 'Tajawal', 'Segoe UI', system-ui, sans-serif;
   --font-mono:    'Fira Code', 'Consolas', 'Courier New', monospace;
+}
+
+/* ---------------- Dark mode (auto, no JS toggle needed) ------------------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg:           #0f172a;
+    --color-surface:      #1e293b;
+    --color-surface-alt:  #172033;
+    --color-border:       #334155;
+    --color-text:         #e2e8f0;
+    --color-text-muted:   #94a3b8;
+    --color-link:         #60a5fa;
+    --color-link-hover:   #93c5fd;
+    --color-primary:      #3b82f6;
+    --color-primary-dark: #93c5fd;
+    --color-accent:       #fbbf24;
+    --color-code-bg:      #1e1b4b;
+    --color-code-text:    #c7d2fe;
+    --color-pre-bg:       #020617;
+    --color-pre-text:     #e2e8f0;
+    --color-card-shadow:  0 1px 3px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .2);
+    --color-card-shadow-hover: 0 4px 12px rgba(0, 0, 0, .4), 0 16px 40px rgba(0, 0, 0, .3);
+  }
 }
 
 /* ---------------- Base ----------------------------------------------------- */
@@ -274,6 +302,7 @@ h1.pageheading {
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   font-style: normal;
   color: var(--color-text);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 #body-main h3.post a {
@@ -359,15 +388,15 @@ h1.pageheading {
   font-family: var(--font-mono);
   font-size: 0.9em;
   padding: 2px 6px;
-  background: #eef2ff;
-  color: #4338ca;
+  background: var(--color-code-bg);
+  color: var(--color-code-text);
   border-radius: 4px;
 }
 
 #body-main h4 + p pre {
   font-family: var(--font-mono);
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--color-pre-bg);
+  color: var(--color-pre-text);
   padding: 16px;
   border-radius: var(--radius-sm);
   overflow-x: auto;
@@ -533,4 +562,114 @@ h1.pageheading {
 #searchbox, #utility-menu, #breadcrumb, #screen-switcher, #sidebar-wrapper,
 #footer #credits {
   display: none !important;
+}
+
+/* ============================================================================
+ * Interactive components added on top of the original layout.
+ * ========================================================================= */
+
+/* ---------------- Reading-progress bar ------------------------------------
+ * Thin coloured strip pinned to the very top of the viewport. Width is
+ * driven from the inline JS in the template based on scroll percentage. */
+#reading-progress {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(270deg, var(--color-primary), var(--color-accent));
+  z-index: 200;
+  transition: width 0.1s linear;
+  pointer-events: none;
+}
+
+/* ---------------- Card hover lift -----------------------------------------
+ * The article header (h3.post) and the body block (h4 + p ...) form a
+ * visual card. Lift the whole card slightly when the cursor hovers any of
+ * its parts so the boundaries feel alive without breaking the layout. */
+#body-main h3.post:hover,
+#body-main h3.post:hover + h4,
+#body-main h3.post:hover + h4 + p,
+#body-main h3.post:hover + h4 + p + p,
+#body-main h4:hover,
+#body-main h4:hover + p,
+#body-main h4:hover + p + p {
+  box-shadow: var(--color-card-shadow-hover);
+}
+
+/* ---------------- Back-to-top button --------------------------------------
+ * Hidden by default; gains `.visible` class once the user scrolls past
+ * 400px (toggled in the inline script in the template).                  */
+#back-to-top {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;            /* RTL: bottom-left corner is the natural spot */
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .25);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity .2s ease, transform .2s ease, background .15s ease, visibility 0s linear .2s;
+  z-index: 150;
+}
+
+#back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity .2s ease, transform .2s ease, background .15s ease;
+}
+
+#back-to-top:hover {
+  background: var(--color-primary-dark);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* ---------------- Footer --------------------------------------------------- */
+#site-footer {
+  margin-top: 48px;
+  padding: 32px 20px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+#site-footer .footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+#site-footer p {
+  margin: 4px 0;
+}
+
+#site-footer .footer-links a {
+  margin: 0 6px;
+  color: var(--color-text-muted);
+}
+
+#site-footer .footer-links a:hover {
+  color: var(--color-link);
+}
+
+/* ---------------- Honour reduced-motion preferences ----------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
