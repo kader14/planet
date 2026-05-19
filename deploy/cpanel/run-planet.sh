@@ -101,5 +101,11 @@ else
     cp -r "${PLANET_ROOT}/static/scripts/." "${OUTPUT_DIR}/scripts/"
 fi
 
+# --- Top-level SEO files (robots.txt + sitemap.xml) ------------------------
+# These live at the docroot, not in a subdirectory, so they're shipped here
+# from static/ rather than via rsync above.
+cp -f "${PLANET_ROOT}/static/robots.txt" "${OUTPUT_DIR}/robots.txt"
+cp -f "${PLANET_ROOT}/static/sitemap.xml" "${OUTPUT_DIR}/sitemap.xml"
+
 log "Static assets synced into ${OUTPUT_DIR}"
 log "Done."
